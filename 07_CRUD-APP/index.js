@@ -2,6 +2,7 @@ const express = require("express");
 const path = require("path");
 const mongoose = require("mongoose");
 const Product = require("./models/product");
+const methodOverride = require("method-override");
 
 const app = express();
 
@@ -13,7 +14,11 @@ mongoose
 
 app.set("views,", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
+
 app.use(express.urlencoded({ extended: true }));
+app.use(methodOverride("_method"));
+
+const categories = ["fruits", "vegetables", "dairy"];
 
 // list of all products
 app.get("/products", async (req, res) => {
@@ -23,7 +28,7 @@ app.get("/products", async (req, res) => {
 
 // form to create a new product
 app.get("/products/new", (req, res) => {
-  res.render("products/new");
+  res.render("products/new", { categories });
 });
 
 // creating new product in db
@@ -39,6 +44,22 @@ app.get("/products/:id", async (req, res) => {
   const { id } = req.params;
   const product = await Product.findById(id);
   res.render("products/show", { product });
+});
+
+app.get("/products/:id/edit", async (req, res) => {
+  const { id } = req.params;
+  const product = await Product.findById(id);
+  res.render("products/edit", { product, categories });
+});
+
+app.put("/products/:id", async (req, res) => {
+  const { id } = req.params;
+  const product = await Product.findByIdAndUpdate(id, req.body, {
+    runValidators: true,
+    new: true,
+  });
+
+  res.redirect(`/products/${product._id}`);
 });
 
 // listening to server on port 5000
